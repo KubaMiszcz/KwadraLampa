@@ -1,0 +1,17 @@
+::L1:onxxxx
+::L1:offxxx
+::L1:PWM200
+::L1:PWMx20
+::L1:TIMxx5
+::L1:TIMx20
+
+
+
+
+
+::L2:onxxxx
+::L2:offxxx
+::L2:PWM200
+::L2:PWMx20
+::L1:TIMxx5
+::L1:TIMx20
