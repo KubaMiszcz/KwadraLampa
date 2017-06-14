@@ -28,7 +28,7 @@
 //stale
 const uint8_t numLamps = 2;
 enum Modes { Manual = 0, Blututu };
-const unsigned long int SecondInMillis = 1000;
+const unsigned long int OneSecondInMillis = 1000;
 const unsigned int CycleDelay = 10;
 
 //komunikaty IN
@@ -76,7 +76,7 @@ void setup() {
 	pinMode(outLamp1OutPWM, OUTPUT);
 	pinMode(inLamp2BrightnessPot, INPUT);
 	pinMode(outLamp2OutPWM, OUTPUT);
-	NextTick = millis() + SecondInMillis;//+1 second
+	NextTick = millis() + OneSecondInMillis;//+1 second
 
 	for (int i = 0; i < numLamps; i++)
 	{
@@ -203,13 +203,13 @@ String ReceiveMesg() {
 	if (mySerial.available() > 0) {
 		str = mySerial.readString();
 		str.trim();
-		Serial.println("Received>> " + str);
+		Serial.println("Received>> " + str);	//echo na sterownik
 		if (str.startsWith("::")) {
 			if (str.length()>11) {
 				str = str.substring(str.length() - 9); //9 osttanich znakow, juz bez "::"
 			}
 			else {
-				str =str+"xxxxxxxxxxx";				
+				str =str+"xxxxxxxxxxx";		//dopelnienie do 11 znakow
 				str = str.substring(2, 11);
 			}
 		}
@@ -260,7 +260,7 @@ void UpdateClock() {
 		}
 		SharedObjects.SetTime(currentTime.H, currentTime.M, currentTime.S);
 		//Serial.println("CLK: " + String(currentTime.H) + ":" + String(currentTime.M) + ":" + String(currentTime.S));
-		NextTick += SecondInMillis;
+		NextTick += OneSecondInMillis;
 	}
 }
 
