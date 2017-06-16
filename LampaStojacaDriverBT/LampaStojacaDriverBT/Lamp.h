@@ -26,6 +26,7 @@ public:
 	bool IsTimerOn;
 	bool IsClockOn;
 	bool IsDimmerOn;
+	bool NextONOFF;	//0 off, 1 on
 private:
 	enum Modes { Manual = 0, Blututu };
 	unsigned long int timerIntervalInMilliseconds;
@@ -54,6 +55,7 @@ public:
 		timerIntervalInMilliseconds = 0;
 		IsTimerOn = false;
 		IsDimmerOn = false;
+		NextONOFF = 0;
 	}
 
 	//0-255
@@ -118,7 +120,7 @@ public:
 			//##############
 
 			//minuty jako skenudy - to potem usun tylko do testow
-			timerIntervalInMilliseconds = timerIntervalInMilliseconds / 60;
+			//timerIntervalInMilliseconds = timerIntervalInMilliseconds / 60;
 
 			timerStopTime = curMillis + timerIntervalInMilliseconds;
 			Serial.println("BT " + Name + " curmillis= " + String(curMillis));
@@ -127,8 +129,16 @@ public:
 
 			if (IsDimmerOn)
 			{
-				dimmerStep = timerIntervalInMilliseconds / currentBrightness;
-				dimmerNextStep = curMillis + dimmerStep;
+				if (NextONOFF == 0) //ma wylaczyc lampe po czasie
+				{
+					dimmerStep = timerIntervalInMilliseconds / currentBrightness;
+					dimmerNextStep = curMillis + dimmerStep;
+				}
+				else {	//ma wlaczyc lampe po czasie
+					dimmerStep = timerIntervalInMilliseconds / (255 - currentBrightness);
+					dimmerNextStep = curMillis + dimmerStep;
+				}
+
 			}
 		}
 		//######### cancel TIMER
@@ -199,6 +209,16 @@ public:
 			Serial.println("BT " + Name + " DIMoff");
 		}
 
+		//############# czy wlaczyc/wylaczyc po dimmer
+		if (str.startsWith("TGLon")) {//set dimmmer
+			NextONOFF = 1;
+			Serial.println("BT " + Name + " TGLon");
+		}
+		if (str.startsWith("TGLoff")) {//set dimmmer
+			NextONOFF = 0;
+			Serial.println("BT " + Name + " TGLoff");
+		}
+
 
 		//############zapytania ::L1:DIMoff
 		if (str.startsWith("?")) {//stan lampy
@@ -222,36 +242,53 @@ public:
 			SharedObjects.MessageToSend = str;
 			Serial.println("Status send: " + str);
 		}
+
+		if (str.startsWith("BRGHT?")) {//stan sciemniacza
+			str = ("::" + Name + ":" + "PWM=" + String(currentBrightness));
+			SharedObjects.MessageToSend = str;
+			Serial.println("Status send: " + str);
+		}
 	}
 
 	void ActionOnTimer() {
 		curMillis = millis();
 		if (IsTimerOn)
 		{
-			if (curMillis > timerNextStep) {
-				//SetBrightness(0);
-				//delay(500);
-				//SetBrightness(255);
-				timerNextStep = curMillis + timerStep;
+			//do testow timera
+			//if (curMillis > timerNextStep) {
+			//	timerNextStep = curMillis + timerStep;
+			//}
+			if (IsDimmerOn)
+			{
+				if (curMillis > dimmerNextStep)
+				{
+					//Serial.println("dimstep" + String(dimmerStep) + " cur-nexstep " + String(curMillis - dimmerNextStep));
+					uint8_t brightnessStep = ((curMillis - dimmerNextStep) / dimmerStep) + 1;
+					if (NextONOFF == 0) {
+						SetBrightness(currentBrightness - brightnessStep);
+					}
+					else {
+						SetBrightness(currentBrightness + brightnessStep);
+					}
+					//dimmerNextStep = curMillis + dimmerStep;
+					dimmerNextStep += brightnessStep * dimmerStep;
+					Serial.println("BT " + Name + " DimFires " + String(dimmerNextStep) + " Bright " + String(currentBrightness));
+				}
 			}
 
 			if (curMillis > timerStopTime)
 			{
 				IsTimerOn = false;
-				IsTurnedON = false;
-				SetBrightness(0);
-				Serial.println("BT " + Name + " TIMFires");
-			}
-			if (IsDimmerOn)
-			{
-				if (curMillis > dimmerNextStep)
+				if (NextONOFF == 1)
 				{
-					uint8_t brightnessStep = ((curMillis - dimmerNextStep) / dimmerStep) + 1;
-					//Serial.println("dimstep" + String(dimmerStep) + " cur-nexstep " + String(curMillis - dimmerNextStep));
-					SetBrightness(currentBrightness - brightnessStep);
-					dimmerNextStep = curMillis+dimmerStep;
-					Serial.println("BT " + Name + " DimFires " + String(dimmerNextStep) + " Bright " + String(currentBrightness));
+					IsTurnedON = true;
+					SetBrightness(255);
 				}
+				else {
+					IsTurnedON = false;
+					SetBrightness(0);
+				}
+				Serial.println("BT " + Name + " TIMFires");
 			}
 		}
 	}

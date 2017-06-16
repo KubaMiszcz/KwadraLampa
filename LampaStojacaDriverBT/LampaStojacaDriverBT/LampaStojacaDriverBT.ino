@@ -23,7 +23,7 @@
 #include <SoftwareSerial.h>
 #include "Lamp.h"
 #include "SharedObjects.h"
-#include <EEPROM.h>
+//#include <EEPROM.h>
 
 //stale
 const uint8_t numLamps = 2;
@@ -157,9 +157,9 @@ void loop() {
 			//czy przejsc w man mode
 			UpdateReadings(i, Lamps[i].inBrightnessPot);
 			if (
-				(readings[i] > (Lamps[i].prevManualBrightness + 5))		//filtre bo ADC plywa moze dodoac jakies 100nF?
+				(readings[i] > (Lamps[i].prevManualBrightness + 10))		//filtre bo ADC plywa moze dodoac jakies 100nF?
 				||
-				(readings[i] < (Lamps[i].prevManualBrightness - 5)))
+				(readings[i] < (Lamps[i].prevManualBrightness - 10)))
 			{
 				Lamps[i].currentMode = Modes(Manual);
 				Lamps[i].prevMode = Modes(Blututu);
